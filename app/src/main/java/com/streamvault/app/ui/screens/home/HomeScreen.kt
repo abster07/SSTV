@@ -14,6 +14,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -77,7 +79,6 @@ private fun HomeContent(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 32.dp)
     ) {
-        // ── Top Bar ──────────────────────────────────────────────────────
         item {
             TopBar(
                 searchQuery = searchQuery,
@@ -88,7 +89,6 @@ private fun HomeContent(
             Spacer(Modifier.height(24.dp))
         }
 
-        // ── Featured Carousel ────────────────────────────────────────────
         if (uiState.featuredChannels.isNotEmpty() && searchQuery.isBlank() &&
             uiState.selectedCategory == null && uiState.selectedCountry == null) {
             item {
@@ -110,7 +110,6 @@ private fun HomeContent(
             }
         }
 
-        // ── Category Chips ───────────────────────────────────────────────
         item {
             SectionHeader(
                 title = "Categories",
@@ -127,7 +126,6 @@ private fun HomeContent(
             Spacer(Modifier.height(32.dp))
         }
 
-        // ── Favorites Row ────────────────────────────────────────────────
         val favorites = getFavoriteChannels()
         if (favorites.isNotEmpty() && searchQuery.isBlank()) {
             item {
@@ -149,7 +147,6 @@ private fun HomeContent(
             }
         }
 
-        // ── Country Filter Row ───────────────────────────────────────────
         if (searchQuery.isBlank() && uiState.selectedCategory == null) {
             item {
                 SectionHeader(
@@ -168,7 +165,6 @@ private fun HomeContent(
             }
         }
 
-        // ── Channel Grid ─────────────────────────────────────────────────
         item {
             val title = when {
                 searchQuery.isNotBlank() -> "Search: \"$searchQuery\""
@@ -187,7 +183,6 @@ private fun HomeContent(
             Spacer(Modifier.height(16.dp))
         }
 
-        // Grid rows (manual chunking for LazyColumn)
         val chunks = uiState.filteredChannels.chunked(6)
         items(chunks) { chunk ->
             Row(
@@ -206,7 +201,6 @@ private fun HomeContent(
                         accentColor = accentColor
                     )
                 }
-                // Fill remaining slots
                 repeat(6 - chunk.size) {
                     Spacer(Modifier.weight(1f))
                 }
@@ -232,7 +226,6 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Logo
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -240,29 +233,18 @@ private fun TopBar(
                         .size(36.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(
-                            Brush.linearGradient(
-                                listOf(accentColor, accentColor.copy(0.5f))
-                            )
+                            Brush.linearGradient(listOf(accentColor, accentColor.copy(0.5f)))
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Filled.Tv, null, tint = Color.Black, modifier = Modifier.size(20.dp))
                 }
                 Spacer(Modifier.width(10.dp))
-                Text(
-                    "StreamVault",
-                    style = TextStyles.DisplayMedium,
-                    color = StreamVaultColors.TextPrimary
-                )
+                Text("StreamVault", style = TextStyles.DisplayMedium, color = StreamVaultColors.TextPrimary)
             }
-            Text(
-                "$channelCount channels available",
-                style = TextStyles.Caption,
-                color = StreamVaultColors.TextMuted
-            )
+            Text("$channelCount channels available", style = TextStyles.Caption, color = StreamVaultColors.TextMuted)
         }
 
-        // Search
         SearchBar(
             query = searchQuery,
             onQueryChange = onSearchChange,
@@ -270,7 +252,6 @@ private fun TopBar(
             accentColor = accentColor
         )
 
-        // Clock
         val time = remember { mutableStateOf("") }
         LaunchedEffect(Unit) {
             while (true) {
@@ -345,12 +326,13 @@ private fun FeaturedCard(
             .onFocusChanged { isFocused = it.isFocused }
             .clickable(onClick = onClick)
     ) {
-        // Background
         if (channel.logoUrl != null) {
             AsyncImage(
                 model = channel.logoUrl,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize().alpha(0.2f),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = 0.2f },
                 contentScale = ContentScale.Crop
             )
         }
@@ -522,13 +504,7 @@ private fun ChannelRow(
     }
 }
 
-// Extension functions needed
-fun Modifier.onFocusChanged(onFocusChanged: (androidx.compose.ui.focus.FocusState) -> Unit) =
-    this.then(androidx.compose.ui.Modifier.onFocusChanged(onFocusChanged))
-
-fun Modifier.alpha(alpha: Float) = this.then(
-    androidx.compose.ui.Modifier.graphicsLayer { this.alpha = alpha }
-)
+// ─── Local helper overloads ────────────────────────────────────────────────
 
 @Composable
 fun SectionHeader(
@@ -537,5 +513,7 @@ fun SectionHeader(
     modifier: Modifier = Modifier,
     subtitle: String? = null
 ) {
+    // Delegate to the components version, ignoring the modifier
+    // (the caller applies it to the surrounding padding)
     com.streamvault.app.ui.components.SectionHeader(title, accentColor, subtitle)
 }
