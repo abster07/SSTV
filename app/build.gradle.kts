@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    implementation(libs.material)
     implementation(libs.compose.material.icons)
     implementation(libs.tv.compose.foundation)
     implementation(libs.tv.compose.material)
