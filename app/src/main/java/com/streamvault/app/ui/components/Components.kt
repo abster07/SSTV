@@ -6,6 +6,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -124,7 +125,10 @@ fun ChannelCard(
             AsyncImage(
                 model = channel.logoUrl,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize().blur(20.dp).alpha(0.15f),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(20.dp)
+                    .graphicsLayer { alpha = 0.15f },
                 contentScale = ContentScale.Crop
             )
         }
@@ -136,7 +140,6 @@ fun ChannelCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Logo
             Box(
                 modifier = Modifier
                     .size(52.dp)
@@ -160,7 +163,6 @@ fun ChannelCard(
                 }
             }
 
-            // Name & Country
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = channel.name,
@@ -173,10 +175,7 @@ fun ChannelCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        text = channel.countryFlag,
-                        style = TextStyles.Caption
-                    )
+                    Text(text = channel.countryFlag, style = TextStyles.Caption)
                     Text(
                         text = channel.country,
                         style = TextStyles.Caption,
@@ -189,7 +188,6 @@ fun ChannelCard(
             }
         }
 
-        // Favorite button
         if (isFocused) {
             IconButton(
                 onClick = onFavoriteToggle,
@@ -230,11 +228,7 @@ fun LiveBadge() {
             .background(StreamVaultColors.Live.copy(alpha = alpha))
             .padding(horizontal = 4.dp, vertical = 1.dp)
     ) {
-        Text(
-            text = "LIVE",
-            style = TextStyles.LabelSmall,
-            color = Color.White
-        )
+        Text(text = "LIVE", style = TextStyles.LabelSmall, color = Color.White)
     }
 }
 
@@ -276,10 +270,7 @@ fun CategoryChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                text = CategoryIcons.getEmoji(category.id),
-                style = TextStyles.BodyMedium
-            )
+            Text(text = CategoryIcons.getEmoji(category.id), style = TextStyles.BodyMedium)
             Text(
                 text = category.name,
                 style = TextStyles.LabelLarge,
@@ -417,11 +408,7 @@ fun ErrorState(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    Icons.Filled.Refresh,
-                    contentDescription = null,
-                    tint = accentColor
-                )
+                Icon(Icons.Filled.Refresh, contentDescription = null, tint = accentColor)
                 Text("Retry", style = TextStyles.LabelLarge, color = StreamVaultColors.TextPrimary)
             }
         }
@@ -435,9 +422,9 @@ fun QualityBadge(quality: String?) {
     if (quality == null) return
     val color = when {
         quality.contains("1080", true) -> Color(0xFFFFD600)
-        quality.contains("720", true) -> Color(0xFF00E5FF)
-        quality.contains("480", true) -> Color(0xFF22C55E)
-        else -> Color(0xFF64748B)
+        quality.contains("720",  true) -> Color(0xFF00E5FF)
+        quality.contains("480",  true) -> Color(0xFF22C55E)
+        else                           -> Color(0xFF64748B)
     }
     Box(
         modifier = Modifier
@@ -445,11 +432,7 @@ fun QualityBadge(quality: String?) {
             .border(1.dp, color.copy(0.6f), RoundedCornerShape(4.dp))
             .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
-        Text(
-            text = quality.uppercase(),
-            style = TextStyles.LabelSmall,
-            color = color
-        )
+        Text(text = quality.uppercase(), style = TextStyles.LabelSmall, color = color)
     }
 }
 
@@ -563,7 +546,7 @@ fun SearchBar(
                     .onFocusChanged { isFocused = it.isFocused },
                 textStyle = TextStyles.BodyLarge.copy(color = StreamVaultColors.TextPrimary),
                 cursorBrush = SolidColor(accentColor),
-                decorationBox = { inner ->
+                decorationBox = { innerTextField: @Composable () -> Unit ->
                     if (query.isEmpty()) {
                         Text(
                             "Search channels, countries...",
@@ -571,7 +554,7 @@ fun SearchBar(
                             color = StreamVaultColors.TextMuted
                         )
                     }
-                    inner()
+                    innerTextField()
                 }
             )
             if (query.isNotEmpty()) {
