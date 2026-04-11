@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.media3.ui)
     implementation(libs.media3.session)
     implementation(libs.media3.ffmpeg)
+    implementation(libs.media3.datasource.okhttp)   // ← added
     implementation(libs.coroutines.android)
     implementation(libs.datastore.preferences)
     implementation(libs.navigation.compose)
