@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">StreamVault</string>
+    <string name="nav_home">Startseite</string>
+    <string name="nav_search">Suchen</string>
+    <string name="nav_favorites">Favoriten</string>
+    <string name="nav_settings">Einstellungen</string>
+    <string name="featured">Empfohlen</string>
+    <string name="categories">Kategorien</string>
+    <string name="my_favorites">Meine Favoriten</string>
+    <string name="by_country">Nach Land</string>
+    <string name="all_channels">Alle Sender</string>
+    <string name="channels_available">%d Sender verfügbar</string>
+    <string name="search_hint">Sender, Länder suchen…</string>
+    <string name="settings">Einstellungen</string>
+    <string name="appearance">Erscheinungsbild</string>
+    <string name="playback">Wiedergabe</string>
+    <string name="audio_video">Audio und Video</string>
+    <string name="language">Sprache</string>
+    <string name="parental">Jugendschutz</string>
+    <string name="about">Über</string>
+    <string name="retry">Wiederholen</string>
+    <string name="live">LIVE</string>
+    <string name="no_favorites">Keine Favoriten</string>
+    <string name="no_favorites_hint">Durchsuchen Sie Sender und drücken Sie ♥, um sie zu speichern</string>
+</resources>
