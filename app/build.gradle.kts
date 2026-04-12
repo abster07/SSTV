@@ -27,6 +27,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -49,6 +50,7 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    implementation(libs.material)
     implementation(libs.compose.material.icons)
     implementation(libs.tv.compose.foundation)
     implementation(libs.tv.compose.material)
@@ -72,9 +74,11 @@ dependencies {
     implementation(libs.media3.ui)
     implementation(libs.media3.session)
     implementation(libs.media3.ffmpeg)
+    implementation(libs.media3.datasource.okhttp)   // ← added
     implementation(libs.coroutines.android)
     implementation(libs.datastore.preferences)
     implementation(libs.navigation.compose)
     implementation(libs.gson)
     debugImplementation(libs.compose.ui.tooling)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

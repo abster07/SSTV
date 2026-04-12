@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.Uri
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
@@ -11,14 +13,12 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
-import androidx.media3.exoplayer.upstream.DefaultDataSource
 import com.streamvault.app.data.model.AppSettings
 import com.streamvault.app.data.model.Stream
 import com.streamvault.app.data.model.StreamQuality
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -57,16 +57,14 @@ class StreamPlayerManager @Inject constructor(
         trackSelector = DefaultTrackSelector(context).apply {
             val paramsBuilder = buildUponParameters()
 
-            // Apply quality restrictions
             when (settings.defaultQuality) {
                 StreamQuality.P1080 -> paramsBuilder.setMaxVideoSize(1920, 1080)
-                StreamQuality.P720 -> paramsBuilder.setMaxVideoSize(1280, 720)
-                StreamQuality.P480 -> paramsBuilder.setMaxVideoSize(854, 480)
-                StreamQuality.P360 -> paramsBuilder.setMaxVideoSize(640, 360)
-                StreamQuality.AUTO -> paramsBuilder.clearVideoSizeConstraints()
+                StreamQuality.P720  -> paramsBuilder.setMaxVideoSize(1280, 720)
+                StreamQuality.P480  -> paramsBuilder.setMaxVideoSize(854, 480)
+                StreamQuality.P360  -> paramsBuilder.setMaxVideoSize(640, 360)
+                StreamQuality.AUTO  -> paramsBuilder.clearVideoSizeConstraints()
             }
 
-            // Prefer specified audio language
             if (settings.audioLanguage.isNotEmpty()) {
                 paramsBuilder.setPreferredAudioLanguage(settings.audioLanguage)
             }
@@ -76,21 +74,16 @@ class StreamPlayerManager @Inject constructor(
 
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
-                /* minBufferMs */ settings.bufferSizeMs,
-                /* maxBufferMs */ settings.bufferSizeMs * 4,
-                /* bufferForPlaybackMs */ 1000,
-                /* bufferForPlaybackAfterRebufferMs */ 2000
+                settings.bufferSizeMs,
+                settings.bufferSizeMs * 4,
+                1000,
+                2000
             )
             .build()
 
-        val renderersFactory = if (settings.useFfmpegDecoder) {
-            // FFmpeg extension renderer - handles MP2, AC3, EAC3, Opus, Vorbis, etc.
-            androidx.media3.decoder.ffmpeg.FfmpegAudioRenderer().let {
-                MediaPlayer.buildCustomRenderersFactory(context, settings.useHardwareDecoding)
-            }
-        } else {
-            MediaPlayer.buildDefaultRenderersFactory(context, settings.useHardwareDecoding)
-        }
+        val renderersFactory = MediaPlayer.buildCustomRenderersFactory(
+            context, settings.useHardwareDecoding, settings.useFfmpegDecoder
+        )
 
         val player = ExoPlayer.Builder(context, renderersFactory)
             .setTrackSelector(trackSelector!!)
@@ -106,7 +99,8 @@ class StreamPlayerManager @Inject constructor(
     }
 
     fun loadStream(stream: Stream, player: ExoPlayer) {
-        val dataSourceFactory = buildDataSourceFactory(stream)
+        val httpFactory = buildOkHttpDataSourceFactory(stream)
+        val dataSourceFactory = DefaultDataSource.Factory(context, httpFactory)
 
         val mediaItem = MediaItem.Builder()
             .setUri(stream.url)
@@ -114,8 +108,10 @@ class StreamPlayerManager @Inject constructor(
 
         val mediaSource = when {
             stream.url.contains(".m3u8", ignoreCase = true) ||
-                    stream.url.contains("hls", ignoreCase = true) -> {
-                HlsMediaSource.Factory(dataSourceFactory).createMediaSource(mediaItem)
+            stream.url.contains("hls",  ignoreCase = true) -> {
+                // Use the DataSource.Factory overload to avoid ambiguity
+                HlsMediaSource.Factory(dataSourceFactory as androidx.media3.datasource.DataSource.Factory)
+                    .createMediaSource(mediaItem)
             }
             stream.url.contains(".mpd", ignoreCase = true) -> {
                 androidx.media3.exoplayer.dash.DashMediaSource.Factory(dataSourceFactory)
@@ -135,50 +131,39 @@ class StreamPlayerManager @Inject constructor(
         _playerInfo.value = _playerInfo.value.copy(state = PlayerState.LOADING)
     }
 
-    private fun buildDataSourceFactory(stream: Stream): DefaultDataSource.Factory {
-        val httpDataSourceFactory = okhttp3DataSourceFactory(stream)
-        return DefaultDataSource.Factory(context, httpDataSourceFactory)
-    }
-
-    private fun okhttp3DataSourceFactory(stream: Stream): androidx.media3.datasource.HttpDataSource.Factory {
-        val factory = androidx.media3.datasource.okhttp.OkHttpDataSource.Factory(
-            buildOkHttpClient(stream)
-        )
-        stream.referrer?.let { factory.setDefaultRequestProperties(mapOf("Referer" to it)) }
-        stream.userAgent?.let { factory.setUserAgent(it) }
-        return factory
-    }
-
-    private fun buildOkHttpClient(stream: Stream): okhttp3.OkHttpClient {
-        return okhttp3.OkHttpClient.Builder()
+    private fun buildOkHttpDataSourceFactory(stream: Stream): OkHttpDataSource.Factory {
+        val okClient = okhttp3.OkHttpClient.Builder()
             .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .apply {
-                stream.referrer?.let { ref ->
+                if (stream.referrer != null || stream.userAgent != null) {
                     addInterceptor { chain ->
-                        chain.proceed(
-                            chain.request().newBuilder()
-                                .addHeader("Referer", ref)
-                                .also { b -> stream.userAgent?.let { b.addHeader("User-Agent", it) } }
-                                .build()
-                        )
+                        val reqBuilder = chain.request().newBuilder()
+                        stream.referrer?.let  { reqBuilder.addHeader("Referer",    it) }
+                        stream.userAgent?.let { reqBuilder.addHeader("User-Agent", it) }
+                        chain.proceed(reqBuilder.build())
                     }
                 }
             }
             .build()
+
+        return OkHttpDataSource.Factory(okClient).apply {
+            stream.referrer?.let  { setDefaultRequestProperties(mapOf("Referer" to it)) }
+            stream.userAgent?.let { setUserAgent(it) }
+        }
     }
 
     fun setQuality(quality: StreamQuality) {
         trackSelector?.let { ts ->
-            val paramsBuilder = ts.buildUponParameters()
+            val p = ts.buildUponParameters()
             when (quality) {
-                StreamQuality.P1080 -> paramsBuilder.setMaxVideoSize(1920, 1080)
-                StreamQuality.P720 -> paramsBuilder.setMaxVideoSize(1280, 720)
-                StreamQuality.P480 -> paramsBuilder.setMaxVideoSize(854, 480)
-                StreamQuality.P360 -> paramsBuilder.setMaxVideoSize(640, 360)
-                StreamQuality.AUTO -> paramsBuilder.clearVideoSizeConstraints()
+                StreamQuality.P1080 -> p.setMaxVideoSize(1920, 1080)
+                StreamQuality.P720  -> p.setMaxVideoSize(1280, 720)
+                StreamQuality.P480  -> p.setMaxVideoSize(854, 480)
+                StreamQuality.P360  -> p.setMaxVideoSize(640, 360)
+                StreamQuality.AUTO  -> p.clearVideoSizeConstraints()
             }
-            ts.parameters = paramsBuilder.build()
+            ts.parameters = p.build()
         }
     }
 
@@ -193,11 +178,11 @@ class StreamPlayerManager @Inject constructor(
     private val playerListener = object : Player.Listener {
         override fun onPlaybackStateChanged(state: Int) {
             val playerState = when (state) {
-                Player.STATE_IDLE -> PlayerState.IDLE
+                Player.STATE_IDLE      -> PlayerState.IDLE
                 Player.STATE_BUFFERING -> PlayerState.BUFFERING
-                Player.STATE_READY -> if (exoPlayer?.playWhenReady == true) PlayerState.PLAYING else PlayerState.PAUSED
-                Player.STATE_ENDED -> PlayerState.IDLE
-                else -> PlayerState.IDLE
+                Player.STATE_READY     -> if (exoPlayer?.playWhenReady == true) PlayerState.PLAYING else PlayerState.PAUSED
+                Player.STATE_ENDED     -> PlayerState.IDLE
+                else                   -> PlayerState.IDLE
             }
             _playerInfo.value = _playerInfo.value.copy(state = playerState)
         }
@@ -206,9 +191,7 @@ class StreamPlayerManager @Inject constructor(
             _playerInfo.value = _playerInfo.value.copy(isPlaying = isPlaying)
         }
 
-        override fun onVideoSizeChanged(videoSize: VideoSize) {
-            // Update available qualities based on tracks
-        }
+        override fun onVideoSizeChanged(videoSize: VideoSize) { /* track quality updates */ }
 
         override fun onPlayerError(error: PlaybackException) {
             _playerInfo.value = _playerInfo.value.copy(
@@ -228,8 +211,27 @@ class StreamPlayerManager @Inject constructor(
     }
 }
 
-// Helper object for renderer factory
+// ─── Renderer factory helpers ──────────────────────────────────────────────
+
 object MediaPlayer {
+    @UnstableApi
+    fun buildCustomRenderersFactory(
+        context: Context,
+        enableHardware: Boolean,
+        useFfmpeg: Boolean = true
+    ): androidx.media3.exoplayer.DefaultRenderersFactory {
+        return androidx.media3.exoplayer.DefaultRenderersFactory(context).apply {
+            setExtensionRendererMode(
+                if (useFfmpeg)
+                    androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
+                else if (enableHardware)
+                    androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
+                else
+                    androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_OFF
+            )
+        }
+    }
+
     @UnstableApi
     fun buildDefaultRenderersFactory(
         context: Context,
@@ -241,19 +243,6 @@ object MediaPlayer {
                     androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
                 else
                     androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
-            )
-        }
-    }
-
-    @UnstableApi
-    fun buildCustomRenderersFactory(
-        context: Context,
-        enableHardware: Boolean
-    ): androidx.media3.exoplayer.DefaultRenderersFactory {
-        return androidx.media3.exoplayer.DefaultRenderersFactory(context).apply {
-            // EXTENSION_RENDERER_MODE_PREFER prefers FFmpeg over built-in codecs
-            setExtensionRendererMode(
-                androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER
             )
         }
     }
