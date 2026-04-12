@@ -25,7 +25,6 @@ import coil.compose.AsyncImage
 import com.streamvault.app.data.model.*
 import com.streamvault.app.ui.components.*
 import com.streamvault.app.ui.screens.theme.*
-import com.streamvault.app.ui.components.SectionHeader
 
 @Composable
 fun HomeScreen(
@@ -504,9 +503,3 @@ private fun ChannelRow(
         }
     }
 }
-
-SectionHeader(
-    title = "Featured",
-    subtitle = "Top channels right now",
-    accentColor = accentColor
-)
