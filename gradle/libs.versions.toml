@@ -28,7 +28,7 @@ compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 material = { group = "com.google.android.material", name = "material", version.ref = "google-material" }
 compose-material-icons = { group = "androidx.compose.material", name = "material-icons-extended" }
 tv-compose-foundation = { group = "androidx.tv", name = "tv-foundation", version = "1.0.0-alpha12" }
-tv-compose-material = { group = "androidx.tv", name = "tv-material", version.ref = "1.1.0-alpha01" }
+tv-compose-material = { group = "androidx.tv", name = "tv-material", version = "1.1.0-alpha01" }
 lifecycle-runtime = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
 activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.9.0" }
