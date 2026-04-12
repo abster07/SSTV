@@ -536,7 +536,3 @@ fun StreamQuality.displayName() = when (this) {
     StreamQuality.P480 -> "480p SD"
     StreamQuality.P360 -> "360p Low"
 }
-
-// Extension
-fun Modifier.onFocusChanged(block: (androidx.compose.ui.focus.FocusState) -> Unit): Modifier =
-    this.then(androidx.compose.ui.Modifier.onFocusChanged(block))
