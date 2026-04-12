@@ -13,6 +13,7 @@ import com.streamvault.app.player.PlayerState
 import com.streamvault.app.player.StreamPlayerManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -50,7 +51,9 @@ class PlayerViewModel @Inject constructor(
     private var exoPlayer: ExoPlayer? = null
     val player get() = exoPlayer
 
-    private var controlsAutoHideJob: kotlinx.coroutines.Job? = null
+    private var controlsAutoHideJob: Job? = null
+    // FIX 1: Track the favorite observer job so we can cancel it before re-launching
+    private var favoriteObserverJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -71,17 +74,21 @@ class PlayerViewModel @Inject constructor(
             it.copy(
                 channel = channel,
                 currentStream = bestStream,
-                availableStreams = streams
+                availableStreams = streams,
+                errorMessage = null
             )
         }
 
-        viewModelScope.launch {
+        // FIX 1: Cancel the previous favorite observer before starting a new one
+        favoriteObserverJob?.cancel()
+        favoriteObserverJob = viewModelScope.launch {
             channelRepo.isFavorite(channelId).collect { isFav ->
                 _uiState.update { it.copy(isFavorite = isFav) }
             }
         }
 
         buildAndPlay(bestStream)
+        scheduleHideControls()
     }
 
     private fun buildAndPlay(stream: Stream?) {
@@ -90,7 +97,12 @@ class PlayerViewModel @Inject constructor(
             return
         }
 
+        // FIX 2: Release the old player cleanly before building a new one.
+        // Do NOT call playerManager.release() here — that nulls the manager's
+        // internal state and breaks the listener. Only release the ExoPlayer instance.
         exoPlayer?.release()
+        exoPlayer = null
+
         exoPlayer = playerManager.buildPlayer(settings.value)
         exoPlayer?.let { playerManager.loadStream(stream, it) }
         _uiState.update { it.copy(currentStream = stream, errorMessage = null) }
@@ -142,6 +154,10 @@ class PlayerViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        favoriteObserverJob?.cancel()
+        controlsAutoHideJob?.cancel()
+        // FIX 3: Release exoPlayer first, then tell the manager to clean up.
+        // The manager removes its listener before releasing, so order matters.
         exoPlayer?.release()
         exoPlayer = null
         playerManager.release()
