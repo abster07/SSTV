@@ -80,6 +80,7 @@ jobs:
         run: |
           echo "download_url=https://github.com/${{ github.repository }}/releases/download/stream-vault-v1-${{ github.run_number }}/${{ env.APK_NAME }}" >> $GITHUB_OUTPUT
 
+
   appvault:
     runs-on: ubuntu-latest
     needs: release
