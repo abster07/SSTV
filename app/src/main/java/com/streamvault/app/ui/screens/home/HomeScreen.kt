@@ -92,12 +92,13 @@ private fun HomeContent(
         if (uiState.featuredChannels.isNotEmpty() && searchQuery.isBlank() &&
             uiState.selectedCategory == null && uiState.selectedCountry == null) {
             item {
-                SectionHeader(
-                    title = "Featured",
-                    subtitle = "Top channels right now",
-                    accentColor = accentColor,
-                    modifier = Modifier.padding(horizontal = 48.dp)
-                )
+                Column(modifier = Modifier.padding(horizontal = 48.dp)) {
+                    SectionHeader(
+                        title = "Featured",
+                        subtitle = "Top channels right now",
+                        accentColor = accentColor
+                    )
+                }
                 Spacer(Modifier.height(16.dp))
                 FeaturedCarousel(
                     channels = uiState.featuredChannels,
@@ -111,11 +112,12 @@ private fun HomeContent(
         }
 
         item {
-            SectionHeader(
-                title = "Categories",
-                accentColor = accentColor,
-                modifier = Modifier.padding(horizontal = 48.dp)
-            )
+            Column(modifier = Modifier.padding(horizontal = 48.dp)) {
+                SectionHeader(
+                    title = "Categories",
+                    accentColor = accentColor
+                )
+            }
             Spacer(Modifier.height(12.dp))
             CategoryRow(
                 categories = uiState.categories,
@@ -129,12 +131,13 @@ private fun HomeContent(
         val favorites = getFavoriteChannels()
         if (favorites.isNotEmpty() && searchQuery.isBlank()) {
             item {
-                SectionHeader(
-                    title = "My Favorites",
-                    subtitle = "${favorites.size} channels",
-                    accentColor = accentColor,
-                    modifier = Modifier.padding(horizontal = 48.dp)
-                )
+                Column(modifier = Modifier.padding(horizontal = 48.dp)) {
+                    SectionHeader(
+                        title = "My Favorites",
+                        subtitle = "${favorites.size} channels",
+                        accentColor = accentColor
+                    )
+                }
                 Spacer(Modifier.height(16.dp))
                 ChannelRow(
                     channels = favorites,
@@ -149,11 +152,12 @@ private fun HomeContent(
 
         if (searchQuery.isBlank() && uiState.selectedCategory == null) {
             item {
-                SectionHeader(
-                    title = "By Country",
-                    accentColor = accentColor,
-                    modifier = Modifier.padding(horizontal = 48.dp)
-                )
+                Column(modifier = Modifier.padding(horizontal = 48.dp)) {
+                    SectionHeader(
+                        title = "By Country",
+                        accentColor = accentColor
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 CountryRow(
                     countries = uiState.countries.take(30),
@@ -174,12 +178,13 @@ private fun HomeContent(
                 uiState.selectedCountry != null -> "Channels in ${uiState.selectedCountry}"
                 else -> "All Channels"
             }
-            SectionHeader(
-                title = title,
-                subtitle = "${uiState.filteredChannels.size} channels",
-                accentColor = accentColor,
-                modifier = Modifier.padding(horizontal = 48.dp)
-            )
+            Column(modifier = Modifier.padding(horizontal = 48.dp)) {
+                SectionHeader(
+                    title = title,
+                    subtitle = "${uiState.filteredChannels.size} channels",
+                    accentColor = accentColor
+                )
+            }
             Spacer(Modifier.height(16.dp))
         }
 
