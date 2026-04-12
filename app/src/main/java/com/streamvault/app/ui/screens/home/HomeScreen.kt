@@ -25,6 +25,7 @@ import coil.compose.AsyncImage
 import com.streamvault.app.data.model.*
 import com.streamvault.app.ui.components.*
 import com.streamvault.app.ui.screens.theme.*
+import com.streamvault.app.ui.components.SectionHeader
 
 @Composable
 fun HomeScreen(
@@ -504,16 +505,8 @@ private fun ChannelRow(
     }
 }
 
-// ─── Local helper overloads ────────────────────────────────────────────────
-
-@Composable
-fun SectionHeader(
-    title: String,
-    accentColor: Color,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null
-) {
-    // Delegate to the components version, ignoring the modifier
-    // (the caller applies it to the surrounding padding)
-    com.streamvault.app.ui.components.SectionHeader(title, accentColor, subtitle)
-}
+SectionHeader(
+    title = "Featured",
+    subtitle = "Top channels right now",
+    accentColor = accentColor
+)
