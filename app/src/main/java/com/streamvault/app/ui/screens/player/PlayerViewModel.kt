@@ -156,8 +156,7 @@ class PlayerViewModel @Inject constructor(
         super.onCleared()
         favoriteObserverJob?.cancel()
         controlsAutoHideJob?.cancel()
-        // FIX 3: Release exoPlayer first, then tell the manager to clean up.
-        // The manager removes its listener before releasing, so order matters.
+
         exoPlayer?.release()
         exoPlayer = null
         playerManager.release()
