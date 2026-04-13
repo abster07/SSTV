@@ -571,3 +571,93 @@ fun SearchBar(
         }
     }
 }
+
+// ─── Skeleton / Shimmer Loading ────────────────────────────────────────────
+
+@Composable
+fun ShimmerBrush(): Brush {
+    val shimmerColors = listOf(
+        StreamVaultColors.SurfaceVariant,
+        StreamVaultColors.SurfaceCard.copy(alpha = 0.9f),
+        StreamVaultColors.SurfaceVariant,
+    )
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnimation by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer_translate"
+    )
+    return Brush.linearGradient(
+        colors = shimmerColors,
+        start = Offset(translateAnimation - 300f, 0f),
+        end = Offset(translateAnimation, 0f)
+    )
+}
+
+@Composable
+fun SkeletonChannelCard(modifier: Modifier = Modifier) {
+    val brush = ShimmerBrush()
+    Box(
+        modifier = modifier
+            .width(Dimens.ChannelCardWidth)
+            .height(Dimens.ChannelCardHeight)
+            .clip(RoundedCornerShape(Dimens.CardRadius))
+            .background(brush)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(StreamVaultColors.SurfaceVariant.copy(alpha = 0.6f))
+            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(90.dp)
+                        .height(12.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(StreamVaultColors.SurfaceVariant.copy(alpha = 0.6f))
+                )
+                Box(
+                    modifier = Modifier
+                        .width(60.dp)
+                        .height(10.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(StreamVaultColors.SurfaceVariant.copy(alpha = 0.4f))
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SkeletonChannelGrid(columnCount: Int = 6, rowCount: Int = 3) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        repeat(rowCount) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 48.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                repeat(columnCount) {
+                    SkeletonChannelCard(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}

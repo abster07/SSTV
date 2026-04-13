@@ -5,7 +5,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
-import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -14,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
@@ -26,7 +24,6 @@ import com.streamvault.app.data.model.*
 import com.streamvault.app.ui.components.*
 import com.streamvault.app.ui.screens.theme.*
 
-
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -35,7 +32,7 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val settings by viewModel.settings.collectAsState()
     val accentColor = Color(settings.accentColor.hex)
-    val (bgColor, surfaceColor) = StreamVaultColors.backgrounds(settings.theme)
+    val (bgColor) = StreamVaultColors.backgrounds(settings.theme)
 
     Box(
         modifier = Modifier
@@ -49,7 +46,12 @@ fun HomeScreen(
                 uiState = uiState,
                 settings = settings,
                 accentColor = accentColor,
-                onChannelClick = onChannelClick,
+                onChannelClick = { channel ->
+                    // Record watch history before navigating
+                    val url = channel.streams.firstOrNull()?.url ?: ""
+                    viewModel.addToWatchHistory(channel, url)
+                    onChannelClick(channel)
+                },
                 onCategorySelect = viewModel::selectCategory,
                 onCountrySelect = viewModel::selectCountry,
                 onSearch = viewModel::search,
@@ -80,18 +82,23 @@ private fun HomeContent(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 32.dp)
     ) {
+        // ── Top bar ────────────────────────────────────────────────────
         item {
             TopBar(
                 searchQuery = searchQuery,
-                onSearchChange = { searchQuery = it; onSearch(it) },
+                onSearchChange = { q -> searchQuery = q; onSearch(q) },
                 accentColor = accentColor,
                 channelCount = uiState.allChannels.size
             )
             Spacer(Modifier.height(24.dp))
         }
 
-        if (uiState.featuredChannels.isNotEmpty() && searchQuery.isBlank() &&
-            uiState.selectedCategory == null && uiState.selectedCountry == null) {
+        // ── Featured carousel ──────────────────────────────────────────
+        if (uiState.featuredChannels.isNotEmpty() &&
+            searchQuery.isBlank() &&
+            uiState.selectedCategory == null &&
+            uiState.selectedCountry == null
+        ) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 48.dp)) {
                     SectionHeader(
@@ -112,12 +119,10 @@ private fun HomeContent(
             }
         }
 
+        // ── Categories ─────────────────────────────────────────────────
         item {
             Column(modifier = Modifier.padding(horizontal = 48.dp)) {
-                SectionHeader(
-                    title = "Categories",
-                    accentColor = accentColor
-                )
+                SectionHeader(title = "Categories", accentColor = accentColor)
             }
             Spacer(Modifier.height(12.dp))
             CategoryRow(
@@ -129,6 +134,29 @@ private fun HomeContent(
             Spacer(Modifier.height(32.dp))
         }
 
+        // ── Recently watched ───────────────────────────────────────────
+        if (uiState.recentChannels.isNotEmpty() && searchQuery.isBlank()) {
+            item {
+                Column(modifier = Modifier.padding(horizontal = 48.dp)) {
+                    SectionHeader(
+                        title = "Recently Watched",
+                        subtitle = "${uiState.recentChannels.size} channels",
+                        accentColor = accentColor
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                ChannelRow(
+                    channels = uiState.recentChannels,
+                    favoriteIds = uiState.favoriteIds,
+                    accentColor = accentColor,
+                    onChannelClick = onChannelClick,
+                    onFavoriteToggle = onFavoriteToggle
+                )
+                Spacer(Modifier.height(32.dp))
+            }
+        }
+
+        // ── Favorites ──────────────────────────────────────────────────
         val favorites = getFavoriteChannels()
         if (favorites.isNotEmpty() && searchQuery.isBlank()) {
             item {
@@ -151,13 +179,11 @@ private fun HomeContent(
             }
         }
 
+        // ── By country ─────────────────────────────────────────────────
         if (searchQuery.isBlank() && uiState.selectedCategory == null) {
             item {
                 Column(modifier = Modifier.padding(horizontal = 48.dp)) {
-                    SectionHeader(
-                        title = "By Country",
-                        accentColor = accentColor
-                    )
+                    SectionHeader(title = "By Country", accentColor = accentColor)
                 }
                 Spacer(Modifier.height(12.dp))
                 CountryRow(
@@ -170,53 +196,67 @@ private fun HomeContent(
             }
         }
 
+        // ── Channel grid header ────────────────────────────────────────
         item {
             val title = when {
                 searchQuery.isNotBlank() -> "Search: \"$searchQuery\""
-                uiState.selectedCategory != null -> uiState.categories.find {
-                    it.id == uiState.selectedCategory
-                }?.name ?: "Channels"
-                uiState.selectedCountry != null -> "Channels in ${uiState.selectedCountry}"
+                uiState.selectedCategory != null ->
+                    uiState.categories.find { it.id == uiState.selectedCategory }?.name ?: "Channels"
+                uiState.selectedCountry != null ->
+                    "Channels in ${uiState.selectedCountry}"
                 else -> "All Channels"
             }
             Column(modifier = Modifier.padding(horizontal = 48.dp)) {
                 SectionHeader(
                     title = title,
-                    subtitle = "${uiState.filteredChannels.size} channels",
+                    subtitle = if (uiState.isFilterLoading) "Loading…"
+                               else "${uiState.filteredChannels.size} channels",
                     accentColor = accentColor
                 )
             }
             Spacer(Modifier.height(16.dp))
         }
 
-        val chunks = uiState.filteredChannels.chunked(6)
-        items(chunks) { chunk ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 48.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                chunk.forEach { channel ->
-                    ChannelCard(
-                        channel = channel,
-                        isFavorite = uiState.favoriteIds.contains(channel.id),
-                        onClick = { onChannelClick(channel) },
-                        onFavoriteToggle = { onFavoriteToggle(channel.id) },
-                        modifier = Modifier.weight(1f),
-                        accentColor = accentColor
-                    )
-                }
-                repeat(6 - chunk.size) {
-                    Spacer(Modifier.weight(1f))
-                }
+        // ── Skeleton OR real channel grid ──────────────────────────────
+        if (uiState.isFilterLoading) {
+            item {
+                SkeletonChannelGrid(columnCount = 6, rowCount = 3)
+                Spacer(Modifier.height(48.dp))
             }
-            Spacer(Modifier.height(16.dp))
-        }
+        } else {
+            val chunks = uiState.filteredChannels.chunked(6)
+            items(chunks) { chunk ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 48.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    chunk.forEach { channel ->
+                        ChannelCard(
+                            channel = channel,
+                            isFavorite = uiState.favoriteIds.contains(channel.id),
+                            onClick = { onChannelClick(channel) },
+                            onFavoriteToggle = { onFavoriteToggle(channel.id) },
+                            modifier = Modifier.weight(1f),
+                            accentColor = accentColor
+                        )
+                    }
+                    repeat(6 - chunk.size) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
 
-        item { Spacer(Modifier.height(48.dp)) }
+            item { Spacer(Modifier.height(48.dp)) }
+        }
     }
 }
+
+// ── TopBar, FeaturedCarousel, FeaturedCard, CategoryRow, CountryRow,
+//    ChannelRow — keep all these exactly as they were in your original file.
+//    Only HomeContent and HomeScreen changed above.
 
 @Composable
 private fun TopBar(
