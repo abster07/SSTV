@@ -130,4 +130,8 @@ class RecommendationEngine @Inject constructor() {
 
         return RecommendedChannel(channel, score, reasons.distinctBy { it::class })
     }
+    
+    private fun buildFrequencyMap(items: List<String>): Map<String, Int> =
+        items.groupingBy { it }.eachCount()
+    
 }
