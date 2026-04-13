@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.streamvault.app.data.model.*
 import com.streamvault.app.data.repository.ChannelRepository
+import com.streamvault.app.data.repository.RecommendationEngine
 import com.streamvault.app.data.repository.Result
 import com.streamvault.app.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel

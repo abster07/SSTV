@@ -6,6 +6,7 @@ import com.streamvault.app.data.api.FavoriteDao
 import com.streamvault.app.data.api.IptvApiService
 import com.streamvault.app.data.api.StreamVaultDatabase
 import com.streamvault.app.data.api.WatchHistoryDao
+// import com.streamvault.app.data.repository.RecommendationEngine
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -63,7 +64,4 @@ object AppModule {
     @Singleton
     fun provideWatchHistoryDao(db: StreamVaultDatabase): WatchHistoryDao = db.watchHistoryDao()
     
-    @Provides
-    @Singleton
-    fun provideRecommendationEngine(): RecommendationEngine = RecommendationEngine()
 }
