@@ -484,7 +484,7 @@ private fun CountryRow(
         }
     }
 }
-
+// I dont know whats the error here
 @Composable
 private fun ChannelRow(
     channels: List<Channel>,
