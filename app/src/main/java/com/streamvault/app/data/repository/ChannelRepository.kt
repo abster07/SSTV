@@ -8,11 +8,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
+
 
 sealed class Result<out T> {
     data class Success<T>(val data: T) : Result<T>()
@@ -139,16 +141,12 @@ class ChannelRepository @Inject constructor(
     fun getFavoriteIds(): Flow<List<String>> = favoriteDao.getFavoriteIds()
 
     suspend fun toggleFavorite(channelId: String) {
-        val ids = favoriteDao.getFavoriteIds()
-        // check inline
-        val favs = _channels.value.find { it.id == channelId }
-        if (favs?.isFavorite == true) {
-            favoriteDao.removeFavorite(channelId)
-        } else {
-            favoriteDao.addFavorite(FavoriteEntity(channelId))
-        }
+      val isFav = favoriteDao.isFavorite(channelId).first()
+      if (isFav) favoriteDao.removeFavorite(channelId)
+      else favoriteDao.addFavorite(FavoriteEntity(channelId))
+      
     }
-
+    
     suspend fun addFavorite(channelId: String) = favoriteDao.addFavorite(FavoriteEntity(channelId))
     suspend fun removeFavorite(channelId: String) = favoriteDao.removeFavorite(channelId)
     fun isFavorite(channelId: String): Flow<Boolean> = favoriteDao.isFavorite(channelId)

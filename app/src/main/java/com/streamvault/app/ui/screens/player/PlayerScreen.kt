@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -536,7 +537,3 @@ fun StreamQuality.displayName() = when (this) {
     StreamQuality.P480 -> "480p SD"
     StreamQuality.P360 -> "360p Low"
 }
-
-// Extension
-fun Modifier.onFocusChanged(block: (androidx.compose.ui.focus.FocusState) -> Unit): Modifier =
-    this.then(androidx.compose.ui.Modifier.onFocusChanged(block))
