@@ -287,6 +287,7 @@ fun SectionHeader(
     title: String,
     accentColor: Color = StreamVaultColors.CyanPrimary,
     subtitle: String? = null,
+    modifier: Modifier = Modifier,
     action: (@Composable () -> Unit)? = null
 ) {
     Row(

@@ -16,11 +16,21 @@ android {
         versionCode = 1
         versionName = "1.0.0"
     }
-
+    
+    signingConfigs {
+        create("release") {
+            storeFile = file("keystore.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+    
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -32,7 +42,6 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
-        freeCompilerArgs += listOf("-opt-in=androidx.tv.material3.ExperimentalTvMaterial3Api")
     }
 
     buildFeatures {
@@ -72,9 +81,9 @@ dependencies {
     implementation(libs.media3.exoplayer.hls)
     implementation(libs.media3.exoplayer.dash)
     implementation(libs.media3.ui)
+    implementation(libs.media3.okhttp)
     implementation(libs.media3.session)
     implementation(libs.media3.ffmpeg)
-    implementation(libs.media3.datasource.okhttp)   // ← added
     implementation(libs.coroutines.android)
     implementation(libs.datastore.preferences)
     implementation(libs.navigation.compose)

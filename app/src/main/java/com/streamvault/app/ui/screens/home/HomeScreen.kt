@@ -92,13 +92,12 @@ private fun HomeContent(
         if (uiState.featuredChannels.isNotEmpty() && searchQuery.isBlank() &&
             uiState.selectedCategory == null && uiState.selectedCountry == null) {
             item {
-                Column(modifier = Modifier.padding(horizontal = 48.dp)) {
-                    SectionHeader(
-                        title = "Featured",
-                        subtitle = "Top channels right now",
-                        accentColor = accentColor
-                    )
-                }
+                SectionHeader(
+                    title = "Featured",
+                    subtitle = "Top channels right now",
+                    accentColor = accentColor,
+                    modifier = Modifier.padding(horizontal = 48.dp)
+                )
                 Spacer(Modifier.height(16.dp))
                 FeaturedCarousel(
                     channels = uiState.featuredChannels,
@@ -112,12 +111,11 @@ private fun HomeContent(
         }
 
         item {
-            Column(modifier = Modifier.padding(horizontal = 48.dp)) {
-                SectionHeader(
-                    title = "Categories",
-                    accentColor = accentColor
-                )
-            }
+            SectionHeader(
+                title = "Categories",
+                accentColor = accentColor,
+                modifier = Modifier.padding(horizontal = 48.dp)
+            )
             Spacer(Modifier.height(12.dp))
             CategoryRow(
                 categories = uiState.categories,
@@ -131,13 +129,12 @@ private fun HomeContent(
         val favorites = getFavoriteChannels()
         if (favorites.isNotEmpty() && searchQuery.isBlank()) {
             item {
-                Column(modifier = Modifier.padding(horizontal = 48.dp)) {
-                    SectionHeader(
-                        title = "My Favorites",
-                        subtitle = "${favorites.size} channels",
-                        accentColor = accentColor
-                    )
-                }
+                SectionHeader(
+                    title = "My Favorites",
+                    subtitle = "${favorites.size} channels",
+                    accentColor = accentColor,
+                    modifier = Modifier.padding(horizontal = 48.dp)
+                )
                 Spacer(Modifier.height(16.dp))
                 ChannelRow(
                     channels = favorites,
@@ -152,12 +149,11 @@ private fun HomeContent(
 
         if (searchQuery.isBlank() && uiState.selectedCategory == null) {
             item {
-                Column(modifier = Modifier.padding(horizontal = 48.dp)) {
-                    SectionHeader(
-                        title = "By Country",
-                        accentColor = accentColor
-                    )
-                }
+                SectionHeader(
+                    title = "By Country",
+                    accentColor = accentColor,
+                    modifier = Modifier.padding(horizontal = 48.dp)
+                )
                 Spacer(Modifier.height(12.dp))
                 CountryRow(
                     countries = uiState.countries.take(30),
@@ -178,13 +174,12 @@ private fun HomeContent(
                 uiState.selectedCountry != null -> "Channels in ${uiState.selectedCountry}"
                 else -> "All Channels"
             }
-            Column(modifier = Modifier.padding(horizontal = 48.dp)) {
-                SectionHeader(
-                    title = title,
-                    subtitle = "${uiState.filteredChannels.size} channels",
-                    accentColor = accentColor
-                )
-            }
+            SectionHeader(
+                title = title,
+                subtitle = "${uiState.filteredChannels.size} channels",
+                accentColor = accentColor,
+                modifier = Modifier.padding(horizontal = 48.dp)
+            )
             Spacer(Modifier.height(16.dp))
         }
 
@@ -484,7 +479,7 @@ private fun CountryRow(
         }
     }
 }
-// I dont know whats the error here
+
 @Composable
 private fun ChannelRow(
     channels: List<Channel>,
@@ -506,6 +501,5 @@ private fun ChannelRow(
                 accentColor = accentColor
             )
         }
-        
     }
 }

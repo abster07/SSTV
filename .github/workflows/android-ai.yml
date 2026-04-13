@@ -43,7 +43,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Rename APK to universal name
-        run: mv $(find app/build/outputs/apk -name "*.apk" | head -1) ${{ env.APK_NAME }}
+        run: mv app/build/outputs/apk/release/app-release.apk stream-vault.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -79,6 +79,7 @@ jobs:
         id: url
         run: |
           echo "download_url=https://github.com/${{ github.repository }}/releases/download/stream-vault-v1-${{ github.run_number }}/${{ env.APK_NAME }}" >> $GITHUB_OUTPUT
+
 
   appvault:
     runs-on: ubuntu-latest
