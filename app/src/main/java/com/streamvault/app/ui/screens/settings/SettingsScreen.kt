@@ -44,6 +44,7 @@ fun SettingsScreen(
             "Audio & Video" to Icons.Filled.Tune,
             "Language" to Icons.Filled.Language,
             "Parental" to Icons.Filled.Lock,
+            "Recommendations" to Icons.Filled.Recommend,
             "About" to Icons.Filled.Info
         )
 
@@ -107,7 +108,8 @@ fun SettingsScreen(
                         2 -> AudioVideoSection(settings, accentColor, viewModel)
                         3 -> LanguageSection(settings, accentColor, viewModel)
                         4 -> ParentalSection(settings, accentColor, viewModel)
-                        5 -> AboutSection(accentColor)
+                        5 -> RecommendationsSection(settings, accentColor, viewModel)
+                        6 -> AboutSection(accentColor)  
                     }
                 }
             }

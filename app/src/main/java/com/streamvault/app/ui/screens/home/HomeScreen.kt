@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
@@ -646,8 +647,8 @@ private fun RecommendedCard(
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
-                    .blur(20.dp)
-                    .graphicsLayer { alpha = 0.12f },
+                    .graphicsLayer { alpha = 0.12f }
+                    .blur(20.dp),
                 contentScale = ContentScale.Crop
             )
         }

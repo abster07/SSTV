@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
+
 // ─── API Response Models ───────────────────────────────────────────────────
 
 data class ChannelDto(
@@ -166,7 +167,8 @@ data class AppSettings(
     val useFfmpegDecoder: Boolean = true,
     val subtitleEnabled: Boolean = false,
     val clockVisible: Boolean = true,
-    val epgEnabled: Boolean = true
+    val epgEnabled: Boolean = true,
+    val recommendationSettings: RecommendationSettings = RecommendationSettings()
 )
 
 enum class AppTheme { DARK, AMOLED, MIDNIGHT_BLUE, FOREST }

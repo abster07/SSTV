@@ -26,7 +26,8 @@ data class HomeUiState(
     val searchQuery: String = "",
     val favoriteIds: List<String> = emptyList(),
     val recentChannels: List<Channel> = emptyList(),
-    val featuredChannels: List<Channel> = emptyList()
+    val featuredChannels: List<Channel> = emptyList(),
+    val recommendedChannels: List<RecommendedChannel> = emptyList()
 )
 
 @HiltViewModel
@@ -38,7 +39,6 @@ class HomeViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-    val recommendedChannels: List<RecommendedChannel> = emptyList()
     val settings: StateFlow<AppSettings> = settingsRepo.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
 

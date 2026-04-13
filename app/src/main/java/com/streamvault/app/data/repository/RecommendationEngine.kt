@@ -27,9 +27,8 @@ class RecommendationEngine @Inject constructor() {
         val implicitCountries = buildFrequencyMap(
             (watchedChannels + favoriteChannels).map { it.country }
         )
-        val implicitNetworks = buildFrequencyMap(
-            (watchedChannels + favoriteChannels).mapNotNull { it.network }
-        )
+        val implicitNetworks = (watchedChannels + favoriteChannels).mapNotNull { it.network }.toSet()
+        
         val implicitContinents = buildFrequencyMap(
             (watchedChannels + favoriteChannels)
                 .mapNotNull { ContinentMap.getContinentForCountry(it.country) }
@@ -56,7 +55,7 @@ class RecommendationEngine @Inject constructor() {
         settings: RecommendationSettings,
         implicitCategories: Map<String, Int>,
         implicitCountries: Map<String, Int>,
-        implicitNetworks: Map<String, String>,
+        implicitNetworks: Set<String>,
         implicitContinents: Map<String, Int>
     ): RecommendedChannel {
         var score = 0f
@@ -120,7 +119,7 @@ class RecommendationEngine @Inject constructor() {
             }
 
             // Network match (e.g. user watches BBC One → suggest BBC Two)
-            if (channel.network != null && implicitNetworks.containsKey(channel.network)) {
+            if (channel.network != null && implicitNetworks.contains(channel.network)) {
                 score += 1.5f
                 reasons.add(RecommendationReason.InFavoriteNetwork(channel.network))
             }
@@ -131,10 +130,4 @@ class RecommendationEngine @Inject constructor() {
 
         return RecommendedChannel(channel, score, reasons.distinctBy { it::class })
     }
-
-    private fun buildFrequencyMap(items: List<String>): Map<String, Int> =
-        items.groupingBy { it }.eachCount()
-
-    // Network map stores channel.id → network for fast lookup
-    private fun buildFrequencyMap(items: Map<String, String>): Map<String, String> = items
 }
