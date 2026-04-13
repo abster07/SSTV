@@ -34,8 +34,16 @@ class SettingsRepository @Inject constructor(
         val SUBTITLE_ENABLED = booleanPreferencesKey("subtitle_enabled")
         val CLOCK_VISIBLE = booleanPreferencesKey("clock_visible")
         val EPG_ENABLED = booleanPreferencesKey("epg_enabled")
+        val REC_ENABLED           = booleanPreferencesKey("rec_enabled")
+        val REC_HISTORY           = booleanPreferencesKey("rec_history")
+        val REC_FAVORITES         = booleanPreferencesKey("rec_favorites") 
+        val REC_REGIONS           = stringPreferencesKey("rec_regions")      // comma-separated
+        val REC_CONTINENTS        = stringPreferencesKey("rec_continents")   // comma-separated
+        val REC_TAGS              = stringPreferencesKey("rec_tags")         // comma-separated
+        val REC_EXCLUDE_NSFW      = booleanPreferencesKey("rec_exclude_nsfw")
+        val REC_MAX_RESULTS       = intPreferencesKey("rec_max_results")
     }
-
+    val recommendationSettings: RecommendationSettings = RecommendationSettings()
     val settings: Flow<AppSettings> = context.dataStore.data
         .catch { emit(emptyPreferences()) }
         .map { prefs ->
@@ -54,7 +62,20 @@ class SettingsRepository @Inject constructor(
                 useFfmpegDecoder = prefs[Keys.USE_FFMPEG] ?: true,
                 subtitleEnabled = prefs[Keys.SUBTITLE_ENABLED] ?: false,
                 clockVisible = prefs[Keys.CLOCK_VISIBLE] ?: true,
-                epgEnabled = prefs[Keys.EPG_ENABLED] ?: true
+                epgEnabled = prefs[Keys.EPG_ENABLED] ?: true,
+                recommendationSettings = RecommendationSettings(
+                  enabled         = prefs[Keys.REC_ENABLED]       ?: true,
+                  basedOnHistory  = prefs[Keys.REC_HISTORY]       ?: true,
+                  basedOnFavorites= prefs[Keys.REC_FAVORITES]     ?: true,
+                  preferredRegions    = prefs[Keys.REC_REGIONS]
+                  ?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+                  preferredContinents = prefs[Keys.REC_CONTINENTS]
+                  ?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+                  preferredTags       = prefs[Keys.REC_TAGS]
+                  ?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+                  excludeNsfw     = prefs[Keys.REC_EXCLUDE_NSFW]  ?: true,
+                  maxResults      = prefs[Keys.REC_MAX_RESULTS]   ?: 20
+                )
             )
         }
 
@@ -114,4 +135,34 @@ class SettingsRepository @Inject constructor(
     suspend fun updateUiLanguage(lang: String) = context.dataStore.edit {
         it[Keys.UI_LANGUAGE] = lang
     }
+    
+    suspend fun updateRecommendationEnabled(v: Boolean) = context.dataStore.edit {
+        it[Keys.REC_ENABLED] = v
+      }
+  suspend fun updateRecommendationHistory(v: Boolean) = context.dataStore.edit {
+      it[Keys.REC_HISTORY] = v
+    }
+      
+  suspend fun updateRecommendationFavorites(v: Boolean) = context.dataStore.edit {
+       it[Keys.REC_FAVORITES] = v
+    }
+        
+  suspend fun updateRecommendationRegions(codes: List<String>) = context.dataStore.edit {
+      it[Keys.REC_REGIONS] = codes.joinToString(",")
+    }
+          
+  suspend fun updateRecommendationContinents(codes: List<String>) = context.dataStore.edit {
+      it[Keys.REC_CONTINENTS] = codes.joinToString(",")
+    }
+            
+  suspend fun updateRecommendationTags(tags: List<String>) = context.dataStore.edit {
+      it[Keys.REC_TAGS] = tags.joinToString(",")
+  }
+  suspend fun updateRecommendationExcludeNsfw(v: Boolean) = context.dataStore.edit {
+      it[Keys.REC_EXCLUDE_NSFW] = v
+    }
+                
+  suspend fun updateRecommendationMaxResults(n: Int) = context.dataStore.edit {
+       it[Keys.REC_MAX_RESULTS] = n
+     }
 }

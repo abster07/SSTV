@@ -178,3 +178,85 @@ enum class AccentColor(val hex: Long) {
     GOLD(0xFFFFD600)
 }
 enum class StreamQuality { AUTO, P1080, P720, P480, P360 }
+
+
+// ─── Recommendation Engine ─────────────────────────────────────────────────
+
+data class RecommendationSettings(
+    val enabled: Boolean = true,
+    val basedOnHistory: Boolean = true,
+    val basedOnFavorites: Boolean = true,
+    val preferredRegions: List<String> = emptyList(),   // country codes
+    val preferredContinents: List<String> = emptyList(), // e.g. "EU", "AS", "NA"
+    val preferredTags: List<String> = emptyList(),       // category ids
+    val excludeNsfw: Boolean = true,
+    val maxResults: Int = 20
+)
+
+data class RecommendedChannel(
+    val channel: Channel,
+    val score: Float,
+    val reasons: List<RecommendationReason>
+)
+
+sealed class RecommendationReason {
+    data class SimilarToWatched(val channelName: String) : RecommendationReason()
+    data class MatchesCategory(val categoryName: String) : RecommendationReason()
+    data class MatchesCountry(val countryName: String) : RecommendationReason()
+    data class MatchesContinent(val continentName: String) : RecommendationReason()
+    data class InFavoriteNetwork(val network: String) : RecommendationReason()
+    object PopularInRegion : RecommendationReason()
+}
+
+// Continent → country code mapping
+object ContinentMap {
+    val continents = mapOf(
+        "AF" to "Africa",
+        "AS" to "Asia",
+        "EU" to "Europe",
+        "NA" to "North America",
+        "SA" to "South America",
+        "OC" to "Oceania",
+        "ME" to "Middle East"
+    )
+
+    // Abbreviated — covers the most common iptv-org country codes
+    val countryToContinent = mapOf(
+        // Europe
+        "GB" to "EU", "DE" to "EU", "FR" to "EU", "IT" to "EU", "ES" to "EU",
+        "NL" to "EU", "PL" to "EU", "RU" to "EU", "SE" to "EU", "NO" to "EU",
+        "DK" to "EU", "FI" to "EU", "CH" to "EU", "AT" to "EU", "BE" to "EU",
+        "PT" to "EU", "GR" to "EU", "CZ" to "EU", "HU" to "EU", "RO" to "EU",
+        "UA" to "EU", "HR" to "EU", "RS" to "EU", "SK" to "EU", "BG" to "EU",
+        "SI" to "EU", "LT" to "EU", "LV" to "EU", "EE" to "EU", "IE" to "EU",
+        "TR" to "EU", "AL" to "EU", "MK" to "EU", "BA" to "EU", "ME" to "EU",
+        // Asia
+        "CN" to "AS", "JP" to "AS", "KR" to "AS", "IN" to "AS", "ID" to "AS",
+        "TH" to "AS", "VN" to "AS", "PH" to "AS", "MY" to "AS", "SG" to "AS",
+        "PK" to "AS", "BD" to "AS", "NP" to "AS", "LK" to "AS", "MM" to "AS",
+        "KH" to "AS", "LA" to "AS", "HK" to "AS", "TW" to "AS", "MN" to "AS",
+        // Middle East
+        "SA" to "ME", "AE" to "ME", "IR" to "ME", "IQ" to "ME", "SY" to "ME",
+        "JO" to "ME", "LB" to "ME", "IL" to "ME", "KW" to "ME", "QA" to "ME",
+        "BH" to "ME", "OM" to "ME", "YE" to "ME", "PS" to "ME",
+        // Africa
+        "NG" to "AF", "EG" to "AF", "ZA" to "AF", "KE" to "AF", "ET" to "AF",
+        "GH" to "AF", "TZ" to "AF", "MA" to "AF", "DZ" to "AF", "TN" to "AF",
+        "CM" to "AF", "CI" to "AF", "SN" to "AF", "ZW" to "AF", "UG" to "AF",
+        // North America
+        "US" to "NA", "CA" to "NA", "MX" to "NA", "CU" to "NA", "HT" to "NA",
+        "DO" to "NA", "GT" to "NA", "HN" to "NA", "SV" to "NA", "NI" to "NA",
+        "CR" to "NA", "PA" to "NA", "JM" to "NA", "TT" to "NA", "BB" to "NA",
+        // South America
+        "BR" to "SA", "AR" to "SA", "CO" to "SA", "PE" to "SA", "VE" to "SA",
+        "CL" to "SA", "EC" to "SA", "BO" to "SA", "PY" to "SA", "UY" to "SA",
+        // Oceania
+        "AU" to "OC", "NZ" to "OC", "PG" to "OC", "FJ" to "OC"
+    )
+
+    fun getContinentForCountry(countryCode: String) =
+        countryToContinent[countryCode.uppercase()]
+
+    fun getCountriesForContinent(continentCode: String) =
+        countryToContinent.filter { it.value == continentCode }.keys.toSet()
+}

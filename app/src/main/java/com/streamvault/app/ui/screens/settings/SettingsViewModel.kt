@@ -31,4 +31,12 @@ class SettingsViewModel @Inject constructor(
     fun setClockVisible(v: Boolean) = viewModelScope.launch { settingsRepo.updateClockVisible(v) }
     fun setEpg(v: Boolean) = viewModelScope.launch { settingsRepo.updateEpg(v) }
     fun setUiLanguage(lang: String) = viewModelScope.launch { settingsRepo.updateUiLanguage(lang) }
+    fun setRecEnabled(v: Boolean)           = viewModelScope.launch { settingsRepo.updateRecommendationEnabled(v) }
+fun setRecHistory(v: Boolean)           = viewModelScope.launch { settingsRepo.updateRecommendationHistory(v) }
+fun setRecFavorites(v: Boolean)         = viewModelScope.launch { settingsRepo.updateRecommendationFavorites(v) }
+fun setRecTags(tags: List<String>)      = viewModelScope.launch { settingsRepo.updateRecommendationTags(tags) }
+fun setRecContinents(codes: List<String>) = viewModelScope.launch { settingsRepo.updateRecommendationContinents(codes) }
+fun setRecRegions(codes: List<String>)  = viewModelScope.launch { settingsRepo.updateRecommendationRegions(codes) }
+fun setRecExcludeNsfw(v: Boolean)       = viewModelScope.launch { settingsRepo.updateRecommendationExcludeNsfw(v) }
+fun setRecMaxResults(n: Int)            = viewModelScope.launch { settingsRepo.updateRecommendationMaxResults(n) }
 }

@@ -31,18 +31,20 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val channelRepo: ChannelRepository,
-    private val settingsRepo: SettingsRepository
+    private val settingsRepo: SettingsRepository,
+    private val recommendationEngine: RecommendationEngine
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-
+    val recommendedChannels: List<RecommendedChannel> = emptyList()
     val settings: StateFlow<AppSettings> = settingsRepo.settings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppSettings())
 
     init {
         observeFavorites()
         observeWatchHistory()
+        observeRecommendations()
         loadData()
     }
 
@@ -54,7 +56,29 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-
+    
+    private fun observeRecommendations() {
+      viewModelScope.launch {
+          combine(
+              channelRepo.getWatchHistory(),
+              channelRepo.getFavoriteIds(),
+              settings
+          ) { history, favIds, appSettings ->
+              Triple(history, favIds.toSet(), appSettings)
+          }.collect { (history, favIds, appSettings) ->
+              val channels = _uiState.value.allChannels
+              if (channels.isEmpty()) return@collect
+              val recommended = recommendationEngine.recommend(
+                  allChannels  = channels,
+                  watchHistory = history,
+                  favoriteIds  = favIds,
+                  settings     = appSettings.recommendationSettings
+              )
+              _uiState.update { it.copy(recommendedChannels = recommended) }
+          }
+      }
+    }
+    
     private fun observeWatchHistory() {
         viewModelScope.launch {
             channelRepo.getWatchHistory().collect { history ->

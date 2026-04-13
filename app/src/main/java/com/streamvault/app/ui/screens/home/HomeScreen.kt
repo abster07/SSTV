@@ -178,7 +178,35 @@ private fun HomeContent(
                 Spacer(Modifier.height(32.dp))
             }
         }
-
+        
+        // ── Recommended for you ────────────────────────────────────────────────
+if (uiState.recommendedChannels.isNotEmpty() &&
+    searchQuery.isBlank() &&
+    uiState.selectedCategory == null &&
+    uiState.selectedCountry == null
+) {
+    item {
+        Column(modifier = Modifier.padding(horizontal = 48.dp)) {
+            SectionHeader(
+                title = "Recommended for You",
+                subtitle = "Based on your watch history and preferences",
+                accentColor = accentColor
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+        RecommendedRow(
+            channels = uiState.recommendedChannels,
+            favoriteIds = uiState.favoriteIds,
+            accentColor = accentColor,
+            onChannelClick = onChannelClick,
+            onFavoriteToggle = onFavoriteToggle
+        )
+        Spacer(Modifier.height(32.dp))
+    }
+}
+        
+        
+        
         // ── By country ─────────────────────────────────────────────────
         if (searchQuery.isBlank() && uiState.selectedCategory == null) {
             item {
@@ -548,5 +576,189 @@ private fun ChannelRow(
             )
         }
         
+    }
+}
+
+@Composable
+private fun RecommendedRow(
+    channels: List<RecommendedChannel>,
+    favoriteIds: List<String>,
+    accentColor: Color,
+    onChannelClick: (Channel) -> Unit,
+    onFavoriteToggle: (String) -> Unit
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 48.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        items(channels, key = { it.channel.id }) { rec ->
+            RecommendedCard(
+                recommended = rec,
+                isFavorite = favoriteIds.contains(rec.channel.id),
+                accentColor = accentColor,
+                onClick = { onChannelClick(rec.channel) },
+                onFavoriteToggle = { onFavoriteToggle(rec.channel.id) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecommendedCard(
+    recommended: RecommendedChannel,
+    isFavorite: Boolean,
+    accentColor: Color,
+    onClick: () -> Unit,
+    onFavoriteToggle: () -> Unit
+) {
+    var isFocused by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        if (isFocused) 1.05f else 1f,
+        spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "rec_scale"
+    )
+
+    Box(
+        modifier = Modifier
+            .width(Dimens.ChannelCardWidth)
+            .height(Dimens.ChannelCardHeight + 28.dp) // extra space for reason tag
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .clip(RoundedCornerShape(Dimens.CardRadius))
+            .border(
+                width = if (isFocused) 2.dp else 1.dp,
+                color = if (isFocused) accentColor else StreamVaultColors.CardBorder,
+                shape = RoundedCornerShape(Dimens.CardRadius)
+            )
+            .background(
+                Brush.verticalGradient(
+                    listOf(StreamVaultColors.SurfaceCard, StreamVaultColors.Surface)
+                )
+            )
+            .onFocusChanged { isFocused = it.isFocused }
+            .clickable(onClick = onClick)
+    ) {
+        val channel = recommended.channel
+
+        // Blurred background logo
+        if (channel.logoUrl != null) {
+            AsyncImage(
+                model = channel.logoUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(20.dp)
+                    .graphicsLayer { alpha = 0.12f },
+                contentScale = ContentScale.Crop
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Logo
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(StreamVaultColors.SurfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                if (channel.logoUrl != null) {
+                    AsyncImage(
+                        model = channel.logoUrl,
+                        contentDescription = channel.name,
+                        modifier = Modifier.fillMaxSize().padding(4.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    Text(
+                        text = channel.name.take(2).uppercase(),
+                        style = TextStyles.HeadlineMedium,
+                        color = accentColor
+                    )
+                }
+            }
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = channel.name,
+                    style = TextStyles.LabelLarge,
+                    color = StreamVaultColors.TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(text = channel.countryFlag, style = TextStyles.Caption)
+                    if (channel.streams.isNotEmpty()) LiveBadge()
+                }
+
+                // Reason tag
+                val reason = recommended.reasons.firstOrNull()
+                if (reason != null) {
+                    Spacer(Modifier.height(4.dp))
+                    ReasonTag(reason = reason, accentColor = accentColor)
+                }
+            }
+        }
+
+        // Favorite button on focus
+        if (isFocused) {
+            IconButton(
+                onClick = onFavoriteToggle,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(28.dp)
+                    .padding(4.dp)
+            ) {
+                Icon(
+                    imageVector = if (isFavorite)
+                        Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = "Favorite",
+                    tint = if (isFavorite) Color(0xFFEF4444)
+                           else StreamVaultColors.TextSecondary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReasonTag(reason: RecommendationReason, accentColor: Color) {
+    val (emoji, label) = when (reason) {
+        is RecommendationReason.MatchesCategory ->
+            CategoryIcons.getEmoji(reason.categoryName) to reason.categoryName.replaceFirstChar { it.uppercase() }
+        is RecommendationReason.MatchesCountry ->
+            "🌍" to reason.countryName
+        is RecommendationReason.MatchesContinent ->
+            "🌐" to reason.continentName
+        is RecommendationReason.InFavoriteNetwork ->
+            "📡" to reason.network
+        is RecommendationReason.SimilarToWatched ->
+            "▶" to "Similar to ${reason.channelName}"
+        RecommendationReason.PopularInRegion ->
+            "🔥" to "Popular nearby"
+    }
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(accentColor.copy(alpha = 0.12f))
+            .border(1.dp, accentColor.copy(alpha = 0.25f), RoundedCornerShape(4.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = "$emoji $label",
+            style = TextStyles.LabelSmall,
+            color = accentColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }

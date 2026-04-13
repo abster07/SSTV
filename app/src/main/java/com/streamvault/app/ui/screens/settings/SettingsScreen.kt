@@ -834,3 +834,228 @@ private fun StreamQuality.description() = when (this) {
     StreamQuality.P480 -> "Standard quality — works on slower connections (2+ Mbps)"
     StreamQuality.P360 -> "Lowest quality — minimal bandwidth usage"
 }
+
+
+@Composable
+private fun RecommendationsSection(
+    settings: AppSettings,
+    accentColor: Color,
+    viewModel: SettingsViewModel
+) {
+    val rec = settings.recommendationSettings
+    val allCategories = listOf(
+        "news","sports","movies","entertainment","music","kids",
+        "documentary","cooking","travel","science","business","general"
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(28.dp)) {
+        SectionHeader("Recommendations", accentColor)
+
+        // Master toggle
+        SettingsGroup(title = "General", accentColor = accentColor) {
+            SettingsToggle(
+                label = "Enable Recommendations",
+                description = "Show personalised channel suggestions on the home screen",
+                icon = Icons.Filled.Recommend,
+                checked = rec.enabled,
+                onCheckedChange = { viewModel.setRecEnabled(it) },
+                accentColor = accentColor
+            )
+        }
+
+        AnimatedVisibility(visible = rec.enabled) {
+            Column(verticalArrangement = Arrangement.spacedBy(28.dp)) {
+
+                // Signals
+                SettingsGroup(title = "Based On", accentColor = accentColor) {
+                    SettingsToggle(
+                        label = "Watch History",
+                        description = "Recommend channels similar to what you have watched",
+                        icon = Icons.Filled.History,
+                        checked = rec.basedOnHistory,
+                        onCheckedChange = { viewModel.setRecHistory(it) },
+                        accentColor = accentColor
+                    )
+                    SettingsDivider()
+                    SettingsToggle(
+                        label = "Favourites",
+                        description = "Recommend channels similar to your saved favourites",
+                        icon = Icons.Filled.Favorite,
+                        checked = rec.basedOnFavorites,
+                        onCheckedChange = { viewModel.setRecFavorites(it) },
+                        accentColor = accentColor
+                    )
+                    SettingsDivider()
+                    SettingsToggle(
+                        label = "Exclude Adult Content",
+                        description = "Never recommend NSFW channels regardless of history",
+                        icon = Icons.Filled.VisibilityOff,
+                        checked = rec.excludeNsfw,
+                        onCheckedChange = { viewModel.setRecExcludeNsfw(it) },
+                        accentColor = accentColor
+                    )
+                }
+
+                // Preferred categories / tags
+                SettingsGroup(title = "Preferred Categories", accentColor = accentColor) {
+                    Text(
+                        "Boost channels in these categories regardless of watch history",
+                        style = TextStyles.BodyMedium,
+                        color = StreamVaultColors.TextMuted
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        allCategories.chunked(4).forEach { row ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                row.forEach { catId ->
+                                    val selected = rec.preferredTags.contains(catId)
+                                    var isFocused by remember { mutableStateOf(false) }
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(
+                                                if (selected) accentColor.copy(0.15f)
+                                                else StreamVaultColors.SurfaceVariant
+                                            )
+                                            .border(
+                                                1.dp,
+                                                if (selected || isFocused) accentColor
+                                                else StreamVaultColors.CardBorder,
+                                                RoundedCornerShape(8.dp)
+                                            )
+                                            .onFocusChanged { isFocused = it.isFocused }
+                                            .clickable {
+                                                val updated = if (selected)
+                                                    rec.preferredTags - catId
+                                                else
+                                                    rec.preferredTags + catId
+                                                viewModel.setRecTags(updated)
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                CategoryIcons.getEmoji(catId),
+                                                style = TextStyles.BodyMedium
+                                            )
+                                            Text(
+                                                catId.replaceFirstChar { it.uppercase() },
+                                                style = TextStyles.LabelLarge,
+                                                color = if (selected) accentColor
+                                                        else StreamVaultColors.TextSecondary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Preferred continents
+                SettingsGroup(title = "Preferred Continents", accentColor = accentColor) {
+                    Text(
+                        "Boost channels from these regions",
+                        style = TextStyles.BodyMedium,
+                        color = StreamVaultColors.TextMuted
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    val continentEmojis = mapOf(
+                        "EU" to "🇪🇺", "AS" to "🌏", "NA" to "🌎",
+                        "SA" to "🌎", "AF" to "🌍", "ME" to "🕌", "OC" to "🌊"
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ContinentMap.continents.forEach { (code, name) ->
+                            val selected = rec.preferredContinents.contains(code)
+                            var isFocused by remember { mutableStateOf(false) }
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(
+                                        if (selected) accentColor.copy(0.15f)
+                                        else StreamVaultColors.SurfaceVariant
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (selected || isFocused) accentColor
+                                        else StreamVaultColors.CardBorder,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .onFocusChanged { isFocused = it.isFocused }
+                                    .clickable {
+                                        val updated = if (selected)
+                                            rec.preferredContinents - code
+                                        else
+                                            rec.preferredContinents + code
+                                        viewModel.setRecContinents(updated)
+                                    }
+                                    .padding(horizontal = 10.dp, vertical = 8.dp)
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        continentEmojis[code] ?: "🌐",
+                                        style = TextStyles.BodyMedium
+                                    )
+                                    Text(
+                                        name,
+                                        style = TextStyles.LabelSmall,
+                                        color = if (selected) accentColor
+                                                else StreamVaultColors.TextSecondary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Max results slider
+                SettingsGroup(title = "Result Count", accentColor = accentColor) {
+                    Text(
+                        "Maximum number of recommended channels to show",
+                        style = TextStyles.BodyMedium,
+                        color = StreamVaultColors.TextMuted
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    val options = listOf(10, 15, 20, 30, 50)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        options.forEach { n ->
+                            val selected = rec.maxResults == n
+                            var isFocused by remember { mutableStateOf(false) }
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(
+                                        if (selected) accentColor.copy(0.15f)
+                                        else StreamVaultColors.SurfaceVariant
+                                    )
+                                    .border(
+                                        1.dp,
+                                        if (selected || isFocused) accentColor
+                                        else StreamVaultColors.CardBorder,
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .onFocusChanged { isFocused = it.isFocused }
+                                    .clickable { viewModel.setRecMaxResults(n) }
+                                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "$n",
+                                    style = TextStyles.LabelLarge,
+                                    color = if (selected) accentColor
+                                            else StreamVaultColors.TextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

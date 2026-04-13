@@ -62,4 +62,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideWatchHistoryDao(db: StreamVaultDatabase): WatchHistoryDao = db.watchHistoryDao()
+    
+    @Provides
+    @Singleton
+    fun provideRecommendationEngine(): RecommendationEngine = RecommendationEngine()
 }
